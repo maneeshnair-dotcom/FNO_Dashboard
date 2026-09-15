@@ -338,8 +338,8 @@ def render_dashboard_body(df, key_suffix):
         ("🔴📶", "Strong Sell Vol", strong_sell_vol_stocks),
         ("🟩", "LSMA-WMA ↑",    lsma_up_stocks),
         ("🟥", "LSMA-WMA ↓",    lsma_down_stocks),
-        ("📗", "LSMA-WMA Trend +",  lsma_wma_pos_stocks),
-        ("📕", "LSMA-WMA Trend -",  lsma_wma_neg_stocks),
+        ("📗", "LSMA-WMA Trend Positive",  lsma_wma_pos_stocks),
+        ("📕", "LSMA-WMA Trend Neg",  lsma_wma_neg_stocks),
     ]
 
     _pills = "".join(
