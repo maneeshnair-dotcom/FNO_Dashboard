@@ -255,12 +255,6 @@ def calculate_wma(series, window=15):
     return pd.Series(out, index=series.index)
 
 
-def calculate_ema(series, window=15):
-    """Standard exponential moving average, same window (15) as WMA/LSMA
-    so LSMA-EMA is directly comparable to the existing LSMA-WMA column."""
-    return series.ewm(span=window, adjust=False).mean()
-
-
 def calculate_lsma(series, window=15):
     n   = window
     arr = series.to_numpy(dtype=float)
@@ -533,9 +527,6 @@ def process_ticker_df(df: pd.DataFrame, ticker: str, requested_interval: str,
     df["LSMA-WMA"] = (df["LSMA"] - df["WMA"]).round(2)
     df["Signal"]   = calculate_signal(df["LSMA"], df["WMA"])
 
-    df["EMA"]      = calculate_ema(df["CLOSE"])
-    df["LSMA-EMA"] = (df["LSMA"] - df["EMA"]).round(2)
-
     df["RSI"] = calculate_stoch_rsi(df["CLOSE"])
     df["Stoch_K"], df["Stoch_D"] = calculate_stochastic(df)
 
@@ -652,7 +643,7 @@ def fetch_nifty50_data(n_days: int = 30, interval: str = "1d",
         "RSI", "Stoch_K", "Stoch_D", "Stoch_Div",
         "BB_Middle", "BB_Upper", "BB_Lower", "BB_Width", "BB_Position",
         "Volume_SMA", "Volume_Ratio", "OBV", "Volume_Trend", "Volume_Signal",
-        "WMA", "LSMA", "LSMA-WMA", "Signal", "EMA", "LSMA-EMA",
+        "WMA", "LSMA", "LSMA-WMA", "Signal",
         "Gann_Time", "Gann_Resistance", "Gann_Support", "Gann_Reversal_Zone", "Gann_Level_Shift",
         "Diff_Peak", "Diff_Trough",
     ]
