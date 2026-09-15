@@ -130,11 +130,28 @@ SKYBLUE_TICKERS = {
 # ── Indicator Functions ───────────────────────────────────────────────────────
 
 def calculate_rsi(series, window=14):
+    """Classic Wilder-style RSI. Kept as the internal building block for
+    Stochastic RSI below — not used directly for the displayed 'RSI'
+    column anymore."""
     delta = series.diff()
     gain = delta.where(delta > 0, 0).rolling(window).mean()
     loss = -delta.where(delta < 0, 0).rolling(window).mean()
     rs = gain / loss
     return 100 - (100 / (1 + rs))
+
+
+def calculate_stoch_rsi(series, rsi_window=14, stoch_window=14, smooth_k=3):
+    """Stochastic RSI: applies the Stochastic Oscillator formula to RSI
+    itself (instead of to price), which reacts faster to momentum shifts
+    than plain RSI. Returned on the same 0-100 scale as RSI, smoothed
+    with a 3-period average (the standard %K line most platforms show),
+    so the existing <30 / >70 oversold/overbought thresholds elsewhere
+    in this file still apply without any other changes needed."""
+    rsi     = calculate_rsi(series, window=rsi_window)
+    rsi_min = rsi.rolling(stoch_window).min()
+    rsi_max = rsi.rolling(stoch_window).max()
+    stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
+    return stoch_rsi.rolling(smooth_k).mean()
 
 
 def calculate_stochastic(df, k_window=12, d_window=5):
@@ -236,6 +253,12 @@ def calculate_wma(series, window=15):
         windows    = sliding_window_view(arr, window)
         out[window - 1:] = windows @ weights / denom
     return pd.Series(out, index=series.index)
+
+
+def calculate_ema(series, window=15):
+    """Standard exponential moving average, same window (15) as WMA/LSMA
+    so LSMA-EMA is directly comparable to the existing LSMA-WMA column."""
+    return series.ewm(span=window, adjust=False).mean()
 
 
 def calculate_lsma(series, window=15):
@@ -510,7 +533,10 @@ def process_ticker_df(df: pd.DataFrame, ticker: str, requested_interval: str,
     df["LSMA-WMA"] = (df["LSMA"] - df["WMA"]).round(2)
     df["Signal"]   = calculate_signal(df["LSMA"], df["WMA"])
 
-    df["RSI"] = calculate_rsi(df["CLOSE"])
+    df["EMA"]      = calculate_ema(df["CLOSE"])
+    df["LSMA-EMA"] = (df["LSMA"] - df["EMA"]).round(2)
+
+    df["RSI"] = calculate_stoch_rsi(df["CLOSE"])
     df["Stoch_K"], df["Stoch_D"] = calculate_stochastic(df)
 
     df["BB_Middle"], df["BB_Upper"], df["BB_Lower"], df["BB_Width"] = \
@@ -626,7 +652,7 @@ def fetch_nifty50_data(n_days: int = 30, interval: str = "1d",
         "RSI", "Stoch_K", "Stoch_D", "Stoch_Div",
         "BB_Middle", "BB_Upper", "BB_Lower", "BB_Width", "BB_Position",
         "Volume_SMA", "Volume_Ratio", "OBV", "Volume_Trend", "Volume_Signal",
-        "WMA", "LSMA", "LSMA-WMA", "Signal",
+        "WMA", "LSMA", "LSMA-WMA", "Signal", "EMA", "LSMA-EMA",
         "Gann_Time", "Gann_Resistance", "Gann_Support", "Gann_Reversal_Zone", "Gann_Level_Shift",
         "Diff_Peak", "Diff_Trough",
     ]

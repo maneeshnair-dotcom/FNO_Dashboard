@@ -228,7 +228,7 @@ with col_title:
       <img src="data:image/png;base64,""" + _LOGO_B64 + """" style="height:56px;width:auto" />
       <div>
         <div class="dash-title">Apex Markets Terminal [YFINANCE-DATA] </div>
-        <div class="dash-sub"> Composite Signals: RSI · Stochastic · Bollinger · Volume</div>
+        <div class="dash-sub"> Composite Signals: Stoch RSI · Stochastic · Bollinger · Volume</div>
       </div>
     </div>""", unsafe_allow_html=True)
     if pending_changed:
@@ -322,6 +322,8 @@ def render_dashboard_body(df, key_suffix):
     strong_sell_vol_stocks = sorted(latest.loc[latest["Volume_Signal"] == "Strong_Sell_Vol", "Stock Name"].tolist())
     lsma_up_stocks      = sorted(latest.loc[latest["Signal"]        == "LONG",    "Stock Name"].tolist())
     lsma_down_stocks    = sorted(latest.loc[latest["Signal"]        == "SHORT",   "Stock Name"].tolist())
+    lsma_ema_pos_stocks = sorted(latest.loc[latest["LSMA-EMA"] > 0,  "Stock Name"].tolist())
+    lsma_ema_neg_stocks = sorted(latest.loc[latest["LSMA-EMA"] < 0,  "Stock Name"].tolist())
 
     kpi_items = [
         ("🟢", "BUY",           buy_stocks),
@@ -336,6 +338,8 @@ def render_dashboard_body(df, key_suffix):
         ("🔴📶", "Strong Sell Vol", strong_sell_vol_stocks),
         ("🟩", "LSMA-WMA ↑",    lsma_up_stocks),
         ("🟥", "LSMA-WMA ↓",    lsma_down_stocks),
+        ("📗", "LSMA-EMA Trend +",  lsma_ema_pos_stocks),
+        ("📕", "LSMA-EMA Trend -",  lsma_ema_neg_stocks),
     ]
 
     _pills = "".join(
@@ -518,6 +522,7 @@ def render_dashboard_body(df, key_suffix):
     _fmt_2dp = ["OPEN", "HIGH", "LOW", "CLOSE", "VOLUME", "Stoch_K", "Stoch_D",
                 "BB_Middle", "BB_Upper", "BB_Lower", "BB_Width",
                 "Volume_SMA", "Volume_Ratio", "OBV", "WMA", "LSMA", "LSMA-WMA",
+                "EMA", "LSMA-EMA",
                 "Gann_Resistance", "Gann_Support"]
     fmt = {c: "{:,.2f}" for c in _fmt_2dp if c in show_df.columns}
     if "RSI" in show_df.columns:             fmt["RSI"] = "{:.1f}"
@@ -566,7 +571,7 @@ def render_dashboard_body(df, key_suffix):
         st.plotly_chart(fig_bar, width='stretch', key=f"chart_bar_{key_suffix}")
 
     with col_chart2:
-        st.markdown('<div class="sec-label">RSI distribution (last bar per stock)</div>',
+        st.markdown('<div class="sec-label">Stoch RSI distribution (last bar per stock)</div>',
                     unsafe_allow_html=True)
         fig_rsi = go.Figure(go.Histogram(
             x=latest["RSI"].dropna(), nbinsx=20,
@@ -658,18 +663,18 @@ def render_dashboard_body(df, key_suffix):
     )
     st.plotly_chart(fig_price, width='stretch', key=f"chart_price_{key_suffix}")
 
-    # RSI + Stoch sub-charts
+    # Stoch RSI + Stoch sub-charts
     c_rsi, c_stoch = st.columns(2)
 
     with c_rsi:
         fig_rsi2 = go.Figure()
         fig_rsi2.add_trace(go.Scatter(x=stock_df["Date"], y=stock_df["RSI"],
-            mode="lines", name="RSI", line=dict(color="#7399C6", width=1.5)))
+            mode="lines", name="Stoch RSI", line=dict(color="#7399C6", width=1.5)))
         fig_rsi2.add_hline(y=70, line_dash="dash", line_color="#f85149", line_width=1)
         fig_rsi2.add_hline(y=30, line_dash="dash", line_color="#3fb950", line_width=1)
         fig_rsi2.update_layout(template="plotly_white", height=180,
             paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
-            margin=dict(t=10,b=10,l=10,r=10), title="RSI (14)",
+            margin=dict(t=10,b=10,l=10,r=10), title="Stoch RSI (14,14,3)",
             font_color="#00355F", showlegend=False,
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=True, gridcolor="#E4EFF9", range=[0,100]))
