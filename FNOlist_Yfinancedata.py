@@ -527,6 +527,12 @@ def process_ticker_df(df: pd.DataFrame, ticker: str, requested_interval: str,
     df["LSMA-WMA"] = (df["LSMA"] - df["WMA"]).round(2)
     df["Signal"]   = calculate_signal(df["LSMA"], df["WMA"])
 
+    # LSMA-WMA_Diff: change in LSMA-WMA vs the previous bar (NOT the sign of
+    # LSMA-WMA itself). Positive = the LSMA-WMA gap widened/strengthened
+    # since last bar; negative = it narrowed/weakened. Used for the
+    # "LSMA-WMA Trend" pills in the dashboard.
+    df["LSMA-WMA_Diff"] = (df["LSMA-WMA"] - df["LSMA-WMA"].shift(1)).round(2)
+
     df["RSI"] = calculate_stoch_rsi(df["CLOSE"])
     df["Stoch_K"], df["Stoch_D"] = calculate_stochastic(df)
 
@@ -643,7 +649,7 @@ def fetch_nifty50_data(n_days: int = 30, interval: str = "1d",
         "RSI", "Stoch_K", "Stoch_D", "Stoch_Div",
         "BB_Middle", "BB_Upper", "BB_Lower", "BB_Width", "BB_Position",
         "Volume_SMA", "Volume_Ratio", "OBV", "Volume_Trend", "Volume_Signal",
-        "WMA", "LSMA", "LSMA-WMA", "Signal",
+        "WMA", "LSMA", "LSMA-WMA", "LSMA-WMA_Diff", "Signal",
         "Gann_Time", "Gann_Resistance", "Gann_Support", "Gann_Reversal_Zone", "Gann_Level_Shift",
         "Diff_Peak", "Diff_Trough",
     ]

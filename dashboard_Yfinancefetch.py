@@ -322,8 +322,8 @@ def render_dashboard_body(df, key_suffix):
     strong_sell_vol_stocks = sorted(latest.loc[latest["Volume_Signal"] == "Strong_Sell_Vol", "Stock Name"].tolist())
     lsma_up_stocks      = sorted(latest.loc[latest["Signal"]        == "LONG",    "Stock Name"].tolist())
     lsma_down_stocks    = sorted(latest.loc[latest["Signal"]        == "SHORT",   "Stock Name"].tolist())
-    lsma_wma_pos_stocks = sorted(latest.loc[latest["LSMA-WMA"] > 0,  "Stock Name"].tolist())
-    lsma_wma_neg_stocks = sorted(latest.loc[latest["LSMA-WMA"] < 0,  "Stock Name"].tolist())
+    lsma_wma_pos_stocks = sorted(latest.loc[latest["LSMA-WMA_Diff"] > 0,  "Stock Name"].tolist())
+    lsma_wma_neg_stocks = sorted(latest.loc[latest["LSMA-WMA_Diff"] < 0,  "Stock Name"].tolist())
 
     kpi_items = [
         ("🟢", "BUY",           buy_stocks),
@@ -338,8 +338,8 @@ def render_dashboard_body(df, key_suffix):
         ("🔴📶", "Strong Sell Vol", strong_sell_vol_stocks),
         ("🟩", "LSMA-WMA ↑",    lsma_up_stocks),
         ("🟥", "LSMA-WMA ↓",    lsma_down_stocks),
-        ("📗", "LSMA-WMA Trend Positive",  lsma_wma_pos_stocks),
-        ("📕", "LSMA-WMA Trend Neg",  lsma_wma_neg_stocks),
+        ("📗", "LSMA-WMA Trend +",  lsma_wma_pos_stocks),
+        ("📕", "LSMA-WMA Trend -",  lsma_wma_neg_stocks),
     ]
 
     _pills = "".join(
