@@ -301,7 +301,15 @@ def compute_market_sentiment(latest_df, basket):
     return sentiment, avg, details, missing
 
 
-def render_dashboard_body(df, key_suffix):
+def render_dashboard_body(df, key_suffix, agree_pos=None, agree_neg=None):
+    """agree_pos / agree_neg: stock names whose LSMA-WMA Trend is
+    positive/negative on BOTH the selected interval AND the 1D reference
+    (computed once, cross-interval, by the caller). When a stock name
+    appears in these sets it's bolded+underlined in the popover lists so
+    it stands out as agreeing across both timeframes."""
+    agree_pos = agree_pos or set()
+    agree_neg = agree_neg or set()
+
     # ── Latest bar per stock ───────────────────────────────────────────────────────
     latest = df.groupby("Stock Name").last().reset_index()
     latest_filt = latest[latest["Final_Signal"].isin(sig_filter)]
@@ -353,7 +361,8 @@ def render_dashboard_body(df, key_suffix):
 
     return_lookup = latest.set_index("Stock Name")["Return"]
 
-    def _colored_stock_list(stocks):
+    def _colored_stock_list(stocks, bold_set=None):
+        bold_set = bold_set or set()
         if not stocks:
             return "None"
         spans = []
@@ -364,15 +373,22 @@ def render_dashboard_body(df, key_suffix):
                 color = "#1A7A3D" if ret > 0 else ("#B42318" if ret < 0 else "#5D7A99")
             except (TypeError, ValueError):
                 color = "#5D7A99"
-            spans.append(f"<span style='color:{color};font-weight:600'>{s}</span>")
+            weight = "800" if s in bold_set else "600"
+            deco   = "text-decoration:underline;text-underline-offset:2px" if s in bold_set else ""
+            spans.append(f"<span style='color:{color};font-weight:{weight};{deco}'>{s}</span>")
         return ", ".join(spans)
 
     with st.popover("🔍 View stock names", key=f"kpi_popover_{key_suffix}"):
+        if agree_pos or agree_neg:
+            st.caption("Bold + underlined = LSMA-WMA Trend agrees on BOTH your selected interval "
+                       "and the 1D reference for that stock.")
         for emoji, label, stocks in kpi_items:
             if label == "Stocks":
                 continue
+            bold_set = (agree_pos if label == "LSMA-WMA Trend +"
+                       else agree_neg if label == "LSMA-WMA Trend -" else None)
             st.markdown(f"**{emoji} {label} ({len(stocks)})**")
-            st.markdown(f"<div style='font-size:13px'>{_colored_stock_list(stocks)}</div>",
+            st.markdown(f"<div style='font-size:13px'>{_colored_stock_list(stocks, bold_set)}</div>",
                         unsafe_allow_html=True)
 
     st.markdown("---")
@@ -762,11 +778,23 @@ if need_reference_tab:
 # so you can always cross-check the intraday/short-interval read against the
 # daily picture without changing the Interval filter itself.
 if need_reference_tab and df_1d is not None:
+    # Cross-interval LSMA-WMA Trend agreement (latest candle of each interval)
+    # — used to bold stock names in the popover lists that are positive (or
+    # negative) on BOTH the selected interval AND the 1D reference.
+    _latest_sel_pre = df.groupby("Stock Name").last().reset_index()
+    _latest_ref_pre = df_1d.groupby("Stock Name").last().reset_index()
+    _sel_pos = set(_latest_sel_pre.loc[_latest_sel_pre["LSMA-WMA_Diff"] > 0, "Stock Name"])
+    _sel_neg = set(_latest_sel_pre.loc[_latest_sel_pre["LSMA-WMA_Diff"] < 0, "Stock Name"])
+    _ref_pos = set(_latest_ref_pre.loc[_latest_ref_pre["LSMA-WMA_Diff"] > 0, "Stock Name"])
+    _ref_neg = set(_latest_ref_pre.loc[_latest_ref_pre["LSMA-WMA_Diff"] < 0, "Stock Name"])
+    agree_pos = _sel_pos & _ref_pos
+    agree_neg = _sel_neg & _ref_neg
+
     tab_primary, tab_ref = st.tabs([f"📊 {interval}  (Your Selection)", "📅 1D  (Reference)"])
     with tab_primary:
-        render_dashboard_body(df, key_suffix="sel")
+        render_dashboard_body(df, key_suffix="sel", agree_pos=agree_pos, agree_neg=agree_neg)
     with tab_ref:
-        render_dashboard_body(df_1d, key_suffix="ref1d")
+        render_dashboard_body(df_1d, key_suffix="ref1d", agree_pos=agree_pos, agree_neg=agree_neg)
 
     # ── Peak/Trough overlap — stocks agreeing on BOTH the selected interval
     # AND the 1D reference for the latest candle (e.g. POWERGRID showing a
