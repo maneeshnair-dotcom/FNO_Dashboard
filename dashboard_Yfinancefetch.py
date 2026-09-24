@@ -334,20 +334,21 @@ def render_dashboard_body(df, key_suffix, agree_pos=None, agree_neg=None):
     lsma_wma_neg_stocks = sorted(latest.loc[latest["LSMA-WMA_Diff"] < 0,  "Stock Name"].tolist())
 
     kpi_items = [
-        ("🟢", "BUY",           buy_stocks),
-        ("🔴", "SELL",          sell_stocks),
-        ("⚪", "NEUTRAL",       neu_stocks),
-        ("📊", "Stocks",        latest["Stock Name"].tolist()),
         ("🔺", "Diff Peak",     peak_stocks),
         ("🔻", "Diff Trough",   trough_stocks),
+        ("📗", "LSMA-WMA Trend +",  lsma_wma_pos_stocks),
+        ("📕", "LSMA-WMA Trend -",  lsma_wma_neg_stocks),
         ("📈", "Vol Rising",    vol_rising_stocks),
         ("📉", "Vol Falling",   vol_falling_stocks),
         ("🟢📶", "Strong Buy Vol",  strong_buy_vol_stocks),
         ("🔴📶", "Strong Sell Vol", strong_sell_vol_stocks),
         ("🟩", "LSMA-WMA ↑",    lsma_up_stocks),
         ("🟥", "LSMA-WMA ↓",    lsma_down_stocks),
-        ("📗", "LSMA-WMA Trend +",  lsma_wma_pos_stocks),
-        ("📕", "LSMA-WMA Trend -",  lsma_wma_neg_stocks),
+        ("📊", "Stocks",        latest["Stock Name"].tolist()),  
+        ("🟢", "BUY",           buy_stocks),
+        ("🔴", "SELL",          sell_stocks),
+        ("⚪", "NEUTRAL",       neu_stocks),
+        
     ]
 
     _pills = "".join(
